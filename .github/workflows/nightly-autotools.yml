@@ -50,7 +50,7 @@ jobs:
   create-release:
     needs: [check-tag, create-release-prepare]
     if: always() && (needs.check-tag.outputs.create-release == 'OK')
-    uses: denischanc/gh-workflows/.github/workflows/release-autotools.yml@master
+    uses: ./.github/workflows/release-autotools.yml
     with:
       tag: ${{ inputs.tag }}
       title: Nightly release
