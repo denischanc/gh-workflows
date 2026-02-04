@@ -1,0 +1,20 @@
+name: Build with autotools
+on:
+  workflow_call:
+    inputs:
+      reconf-file:
+        type: string
+        default: ./bin/reconf.sh
+env:
+  BUILD_DIR: _build
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - run: sudo apt update
+    - run: sudo apt install -y libuv1-dev
+    - uses: actions/checkout@v6
+    - run: ${{ inputs.reconf-file }}
+    - run: mkdir -p $BUILD_DIR
+    - working-directory: ${{ env.BUILD_DIR }}
+      run: $GITHUB_WORKSPACE/configure && make check
