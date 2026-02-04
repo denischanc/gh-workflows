@@ -34,4 +34,5 @@ jobs:
         VERSION: ${{ inputs.version }}
         VERSION_EXT: ${{ inputs.version-ext }}
         TITLE: ${{ inputs.title }}
+        GH_TOKEN: ${{ github.token }}
       run: gh release create $TAG "$BUILD_DIR/cmap-$VERSION.tar.zst#cmap-$VERSION$VERSION_EXT.tar.zst" -t "$TITLE"

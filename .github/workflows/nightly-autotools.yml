@@ -36,6 +36,8 @@ jobs:
     needs: [check-tag]
     if: needs.check-tag.outputs.delete-tag == 'OK'
     runs-on: ubuntu-slim
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
     - uses: actions/checkout@v6
     - run: echo IS_RELEASE=$(gh release list --json tagName -q ".[] | select(.tagName==\"$NA_TAG\").tagName") >> $GITHUB_ENV
