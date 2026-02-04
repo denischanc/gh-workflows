@@ -1,0 +1,59 @@
+name: Nightly release with autotools
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        default: nightly
+      version:
+        type: string
+        required: true
+      reconf-file:
+        type: string
+        default: ./bin/reconf.sh
+jobs:
+  check-tag:
+    runs-on: ubuntu-slim
+    outputs:
+      delete-tag: ${{ steps.delete-tag.outputs.delete-tag }}
+      create-release: ${{ steps.create-release.outputs.create-release }}
+    steps:
+    - uses: actions/checkout@v6
+    - run: git pull -t
+    - run: echo "NIGHTLY_TAG_SHA=$(git show-ref -s ${{ inputs.tag }})" >> $GITHUB_ENV
+    - run: for v in NIGHTLY_TAG_SHA GITHUB_SHA; do eval echo \"$v=[\$$v]\"; done
+    - id: delete-tag
+      if: (github.sha != env.NIGHTLY_TAG_SHA) && (env.NIGHTLY_TAG_SHA != '')
+      run: echo "delete-tag=OK" >> $GITHUB_OUTPUT
+    - id: create-release
+      if: github.sha != env.NIGHTLY_TAG_SHA
+      run: echo "create-release=OK" >> $GITHUB_OUTPUT
+  delete-tag:
+    needs: [check-tag]
+    if: needs.check-tag.outputs.delete-tag == 'OK'
+    runs-on: ubuntu-slim
+    steps:
+    - uses: actions/checkout@v6
+    - run: echo IS_RELEASE=$(gh release list --json tagName -q '.[] | select(.tagName=="${{ inputs.tag }}").tagName') >> $GITHUB_ENV
+    - if: env.IS_RELEASE == inputs.tag
+      run: gh release delete ${{ inputs.tag }} -y
+    - run: git push -d origin ${{ inputs.tag }}
+  create-release-prepare:
+    needs: [check-tag, delete-tag]
+    if: always() && (needs.check-tag.outputs.create-release == 'OK')
+    runs-on: ubuntu-slim
+    outputs:
+      version-ext: ${{ steps.version-ext.outputs.version-ext }}
+    steps:
+    - id: version-ext
+      run: echo "version-ext=$(date '+-%Y%m%d-%H%M%z')" >> $GITHUB_OUTPUT
+  create-release:
+    needs: [check-tag, create-release-prepare]
+    if: always() && (needs.check-tag.outputs.create-release == 'OK')
+    uses: denischanc/gh-workflows/.github/workflows/release-autotools.yml@master
+    with:
+      tag: ${{ inputs.tag }}
+      title: Nightly release
+      version: ${{ inputs.version }}
+      version-ext: ${{ needs.create-release-prepare.outputs.version-ext }}
+      reconf-file: ${{ inputs.reconf-file }}
