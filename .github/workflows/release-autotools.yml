@@ -1,0 +1,32 @@
+name: Release with autotools
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+      title:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+      version-ext:
+        type: string
+      reconf-file:
+        type: string
+        default: ./bin/reconf.sh
+env:
+  BUILD_DIR: _build
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - run: sudo apt update
+    - run: sudo apt install -y libuv1-dev
+    - uses: actions/checkout@v6
+    - run: ${{ inputs.reconf-file }}
+    - run: mkdir -p $BUILD_DIR
+    - working-directory: ${{ env.BUILD_DIR }}
+      run: ${{ github.workspace }}/configure && make && make distcheck && make dist-zstd
+    - run: gh release create ${{ inputs.tag }} "$BUILD_DIR/cmap-${{ inputs.version }}.tar.zst#cmap-${{ inputs.version }}${{ inputs.version-ext }}.tar.zst" -t "${{ inputs.title }}"
