@@ -28,5 +28,10 @@ jobs:
     - run: ${{ inputs.reconf-file }}
     - run: mkdir -p $BUILD_DIR
     - working-directory: ${{ env.BUILD_DIR }}
-      run: ${{ github.workspace }}/configure && make && make distcheck && make dist-zstd
-    - run: gh release create ${{ inputs.tag }} "$BUILD_DIR/cmap-${{ inputs.version }}.tar.zst#cmap-${{ inputs.version }}${{ inputs.version-ext }}.tar.zst" -t "${{ inputs.title }}"
+      run: $GITHUB_WORKSPACE/configure && make && make distcheck && make dist-zstd
+    - env:
+        TAG: ${{ inputs.tag }}
+        VERSION: ${{ inputs.version }}
+        VERSION_EXT: ${{ inputs.version-ext }}
+        TITLE: ${{ inputs.title }}
+      run: gh release create $TAG "$BUILD_DIR/cmap-$VERSION.tar.zst#cmap-$VERSION$VERSION_EXT.tar.zst" -t "$TITLE"

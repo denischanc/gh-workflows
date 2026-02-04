@@ -11,6 +11,8 @@ on:
       reconf-file:
         type: string
         default: ./bin/reconf.sh
+env:
+  NA_TAG: ${{ inputs.tag }}
 jobs:
   check-tag:
     runs-on: ubuntu-slim
@@ -20,8 +22,10 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - run: git pull -t
-    - run: echo "NIGHTLY_TAG_SHA=$(git show-ref -s ${{ inputs.tag }})" >> $GITHUB_ENV
-    - run: for v in NIGHTLY_TAG_SHA GITHUB_SHA; do eval echo \"$v=[\$$v]\"; done
+    - run: echo "NIGHTLY_TAG_SHA=$(git show-ref -s $NA_TAG)" >> $GITHUB_ENV
+    - env:
+        VAR_LIST: NIGHTLY_TAG_SHA GITHUB_SHA
+      run: for v in $VAR_LIST; do eval echo \"$v=[\$$v]\"; done
     - id: delete-tag
       if: (github.sha != env.NIGHTLY_TAG_SHA) && (env.NIGHTLY_TAG_SHA != '')
       run: echo "delete-tag=OK" >> $GITHUB_OUTPUT
@@ -34,10 +38,10 @@ jobs:
     runs-on: ubuntu-slim
     steps:
     - uses: actions/checkout@v6
-    - run: echo IS_RELEASE=$(gh release list --json tagName -q '.[] | select(.tagName=="${{ inputs.tag }}").tagName') >> $GITHUB_ENV
+    - run: echo IS_RELEASE=$(gh release list --json tagName -q ".[] | select(.tagName==\"$NA_TAG\").tagName") >> $GITHUB_ENV
     - if: env.IS_RELEASE == inputs.tag
-      run: gh release delete ${{ inputs.tag }} -y
-    - run: git push -d origin ${{ inputs.tag }}
+      run: gh release delete $NA_TAG -y
+    - run: git push -d origin $NA_TAG
   create-release-prepare:
     needs: [check-tag, delete-tag]
     if: always() && (needs.check-tag.outputs.create-release == 'OK')
