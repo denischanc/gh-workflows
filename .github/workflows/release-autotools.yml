@@ -17,6 +17,7 @@ on:
         type: string
 env:
   BUILD_DIR: _build
+  VERSION_EXT: ${{ inputs.package-version-ext }}
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -32,10 +33,13 @@ jobs:
       run: $GITHUB_WORKSPACE/configure && make && make distcheck && make dist-zstd
     - run: echo "NAME=$(grep '^AC_INIT(' configure.ac | awk -F[ '{print $2}' | awk -F] '{print $1}')" >> $GITHUB_ENV
     - run: echo "VERSION=$(grep '^AC_INIT(' configure.ac | awk -F[ '{print $3}' | awk -F] '{print $1}')" >> $GITHUB_ENV
+    - run: echo "PACKAGE=$NAME-$VERSION" >> $GITHUB_ENV
+    - if: env.VERSION_EXT != ''
+      working-directory: ${{ env.BUILD_DIR }}
+      run: mv $PACKAGE.tar.zst $PACKAGE$VERSION_EXT.tar.zst
     - env:
         TAG: ${{ inputs.tag }}
-        PACKAGE: ${{ env.NAME }}-${{ env.VERSION }}
-        VERSION_EXT: ${{ inputs.package-version-ext }}
         TITLE: ${{ inputs.title }}
         GH_TOKEN: ${{ github.token }}
-      run: gh release create $TAG "$BUILD_DIR/$PACKAGE.tar.zst#$PACKAGE$VERSION_EXT.tar.zst" -t "$TITLE"
+      working-directory: ${{ env.BUILD_DIR }}
+      run: gh release create $TAG $PACKAGE$VERSION_EXT.tar.zst -t "$TITLE"
