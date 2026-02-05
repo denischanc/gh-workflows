@@ -5,6 +5,8 @@ on:
       reconf-file:
         type: string
         default: ./bin/reconf.sh
+      packages-to-install:
+        type: string
 env:
   BUILD_DIR: _build
 jobs:
@@ -12,7 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - run: sudo apt update
-    - run: sudo apt install -y libuv1-dev
+    - env:
+        PACKAGES: ${{ inputs.packages-to-install }}
+      run: sudo apt install -y $PACKAGES
     - uses: actions/checkout@v6
     - run: ${{ inputs.reconf-file }}
     - run: mkdir -p $BUILD_DIR
