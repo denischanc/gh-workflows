@@ -22,10 +22,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-    - run: sudo apt update
-    - env:
+    - if: inputs.packages-to-install != ''
+      env:
         PACKAGES: ${{ inputs.packages-to-install }}
-      run: sudo apt install -y $PACKAGES
+      run: sudo apt update && sudo apt install -y $PACKAGES
     - uses: actions/checkout@v6
     - run: ${{ inputs.reconf-file }}
     - run: mkdir -p $BUILD_DIR
